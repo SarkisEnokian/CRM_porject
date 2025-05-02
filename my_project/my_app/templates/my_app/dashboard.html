@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+  </head>
+  <body style="background-color:black; color: white;">
+    <h1>This is my dashboard. Name: {{ user.username }}</h1>
+    <a href="{% url 'make_blog' %}">Make Blog</a><br>
+    <a href="{% url 'user-logout'%}">Logout Here</a><br>
+    <a href="{% url 'blogs' %}">See All Blogs</a><br>
+    <a href="{% url 'my_blogs' %}">My Blogs</a>
+  </body>
+</html>
