@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body style="background-color:black; color: white;" >
+    <h1>All Blogs</h1>
+    <a href="{% url  'dashboard' %}">Back to Dashboard</a><br><br>
+{% for blog in blogs %}
+<div style="margin-bottom: 30px; border:solid 5px white;">
+    <h2>{{ blog.title }}</h2>
+  <p>{{ blog.description }}</p>
+  <p><strong>Author:</strong> {{ blog.author.username }}</p>
+</div>
+{% endfor %}
+  
+
+
+
+</body>
+</html>
