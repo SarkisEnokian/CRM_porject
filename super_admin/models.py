@@ -15,7 +15,6 @@ class AdminManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, username, password=None, **extra_fields):
-        # Check if there is already a superuser, if so, set is_superuser=False for the new one
         if AdminUser.objects.filter(is_superuser=True).exists():
             extra_fields.setdefault('is_superuser', False)
         else:
