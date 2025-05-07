@@ -10,6 +10,7 @@ class LoginSerializer(serializers.Serializer):
   password = serializers.CharField(write_only=True)
 
 
+
 class AdminUserSerializer(serializers.ModelSerializer):
   username = serializers.CharField(required=True)
   name = serializers.CharField(required=True)

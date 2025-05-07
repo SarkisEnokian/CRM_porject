@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 from decouple import config
 
@@ -40,7 +41,8 @@ INSTALLED_APPS = [
   'super_admin',
   'rest_framework',
   'drf_yasg'
-]
+  'drf_yasg',
+
 
 MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
@@ -133,9 +135,9 @@ REST_FRAMEWORK = {
   ),
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'gortorozyan1@gmail.com'
-EMAIL_HOST_PASSWORD = 'pjrx cyhs qhuz kxdl'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'gortorozyan1@gmail.com'
+# EMAIL_HOST_PASSWORD = 'pjrx cyhs qhuz kxdl'
