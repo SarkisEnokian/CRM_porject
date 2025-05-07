@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 from decouple import config
@@ -39,7 +40,8 @@ INSTALLED_APPS = [
   'django.contrib.staticfiles',
   'super_admin',
   'rest_framework',
-  'drf_yasg'
+  'drf_yasg',
+  'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -90,19 +92,24 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-  {
-    'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-  },
-  {
-    'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-  },
-  {
-    'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-  },
-  {
-    'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-  },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8},
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.UppercaseLetterValidator',
+    },
 ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -129,13 +136,37 @@ AUTH_USER_MODEL = 'super_admin.AdminUser'
 
 REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (
-    'rest_framework_simplejwt.authentication.JWTAuthentication',
+    'super_admin.authentication.CookieJWTAuthentication',
+    'rest_framework.authentication.SessionAuthentication',
   ),
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'gortorozyan1@gmail.com'
-EMAIL_HOST_PASSWORD = 'pjrx cyhs qhuz kxdl'
+# CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+# ]
+
+SIMPLE_JWT = {
+  'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+  'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+  'ROTATE_REFRESH_TOKENS': True,
+  'BLACKLIST_AFTER_ROTATION': True,
+  'AUTH_HEADER_TYPES': ('Bearer',)
+
+}
+
+CSRF_COOKIE_NAME = "csrftoken"
+CSRF_COOKIE_HTTPONLY = False  # պետք է լինեն հասանելի JavaScript-ին (React/Vue-ի համար)
+CSRF_COOKIE_SECURE = True     # HTTPS production-ում
+CSRF_COOKIE_SAMESITE = "Lax"
+
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"
+
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'gortorozyan1@gmail.com'
+# EMAIL_HOST_PASSWORD = 'pjrx cyhs qhuz kxdl'

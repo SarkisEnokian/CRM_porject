@@ -53,18 +53,25 @@
 # ]
 
 
-
 from django.urls import path
+
 from .views import (
-    LoginView,
-    SuperAdminDashboardView,
-    AdminDashboardView,
-    CreateAdminUserView,
+  LoginView,
+  LogoutView,
+  SuperAdminDashboardView,
+  AdminDashboardView,
+  CreateAdminUserView,
+  GetCSRFTokenView,
+TokenRefreshView
 )
 
 urlpatterns = [
-    path('login/', LoginView.as_view(), name='login'),
-    path('dashboard/superadmin/', SuperAdminDashboardView.as_view(), name='superadmin_dashboard'),
-    path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
-    path('create_admin/', CreateAdminUserView.as_view(), name='create_admin_user'),
+  path('login/', LoginView.as_view(), name='login'),
+  path('logout/', LogoutView.as_view(), name='logout'),
+  path('csrf/', GetCSRFTokenView.as_view(), name='csrf_token'),
+  path('refresh/', TokenRefreshView.as_view(), name='refresh_token'),
+  path('create_admin/', CreateAdminUserView.as_view(), name='create_admin_user'),
+  path('dashboard/superadmin/', SuperAdminDashboardView.as_view(), name='superadmin_dashboard'),
+  path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
+
 ]
