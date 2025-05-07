@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
+from decouple import config
 
 from decouple import config
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
   'drf_yasg',
   'rest_framework_simplejwt.token_blacklist',
 ]
+
 
 MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
