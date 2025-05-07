@@ -2,6 +2,7 @@ import re
 
 from rest_framework import serializers
 
+from error_messages import ERROR_MESSAGES
 from .models import AdminUser
 
 
@@ -26,47 +27,47 @@ class AdminUserSerializer(serializers.ModelSerializer):
   def validate_username(self, value):
     value = value.strip()
     if len(value) < 5:
-      raise serializers.ValidationError("Username must be at least 2 characters long.")
+      raise serializers.ValidationError(ERROR_MESSAGES['username_length'])
     return value
 
   def validate_name(self, value):
     value = value.strip()
     if not re.match(r'^[a-zA-Z]{2,50}$', value):
-      raise serializers.ValidationError("Name must contain only letters and be 2–50 characters long.")
+      raise serializers.ValidationError(ERROR_MESSAGES['name_format'])
     return value
 
   def validate_surname(self, value):
     value = value.strip()
     if not re.match(r'^[a-zA-Z]{2,50}$', value):
-      raise serializers.ValidationError("Surname must contain only letters and be 2–50 characters long.")
+      raise serializers.ValidationError(ERROR_MESSAGES['surname_format'])
     return value
 
   def validate_email(self, value):
     if AdminUser.objects.filter(email=value).exists():
-      raise serializers.ValidationError("Email is already in use.")
+      raise serializers.ValidationError(ERROR_MESSAGES['email_taken'])
     if not re.match(r"[^@]+@[^@]+\.[^@]+", value):
-      raise serializers.ValidationError("Invalid email format.")
+      raise serializers.ValidationError(ERROR_MESSAGES['email_invalid'])
     return value
 
   def validate_password(self, value):
     value = value.strip()
     if len(value) < 8:
-      raise serializers.ValidationError("Password must be at least 8 characters long.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_length'])
     if not re.search(r'[A-Z]', value):
-      raise serializers.ValidationError("Password must contain at least one uppercase letter.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_upper'])
     if not re.search(r'[a-z]', value):
-      raise serializers.ValidationError("Password must contain at least one lowercase letter.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_lower'])
     if not re.search(r'\d', value):
-      raise serializers.ValidationError("Password must contain at least one digit.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_digit'])
     if not re.search(r'[^\w\s]', value):
-      raise serializers.ValidationError("Password must contain at least one special character.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_special'])
     if " " in value:
-      raise serializers.ValidationError("Password can't contain spaces.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_spaces'])
     return value
 
   def validate(self, data):
     if data['password'] != data['confirm_password']:
-      raise serializers.ValidationError("Passwords do not match.")
+      raise serializers.ValidationError(ERROR_MESSAGES['password_match'])
     return data
 
   def create(self, validated_data):
@@ -76,4 +77,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
     user.set_password(password)
     user.is_staff = True
     user.save()
+    
     return user
+
