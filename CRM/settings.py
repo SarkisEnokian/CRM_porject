@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from decouple import config
 
+from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -38,8 +40,9 @@ INSTALLED_APPS = [
   'django.contrib.staticfiles',
   'super_admin',
   'rest_framework',
+  'drf_yasg'
   'drf_yasg',
-]
+
 
 MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
@@ -127,9 +130,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'super_admin.AdminUser'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+  'DEFAULT_AUTHENTICATION_CLASSES': (
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+  ),
 }
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
