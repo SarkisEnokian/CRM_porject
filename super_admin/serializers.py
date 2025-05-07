@@ -11,8 +11,12 @@ class LoginSerializer(serializers.Serializer):
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
-  password = serializers.CharField(write_only=True)
-  confirm_password = serializers.CharField(write_only=True)
+  username = serializers.CharField(required=True)
+  name = serializers.CharField(required=True)
+  surname = serializers.CharField(required=True)
+  email = serializers.EmailField(required=True)
+  password = serializers.CharField(write_only=True, required=True)
+  confirm_password = serializers.CharField(write_only=True, required=True)
 
   class Meta:
     model = AdminUser
@@ -59,13 +63,13 @@ class AdminUserSerializer(serializers.ModelSerializer):
       raise serializers.ValidationError("Password can't contain spaces.")
     return value
 
-  def validate_confirm_password(self, value):
-    password = self.initial_data.get('password')
-    if value != password:
+  def validate(self, data):
+    if data['password'] != data['confirm_password']:
       raise serializers.ValidationError("Passwords do not match.")
-    return value
+    return data
 
   def create(self, validated_data):
+    validated_data.pop('confirm_password')
     password = validated_data.pop('password')
     user = AdminUser(**validated_data)
     user.set_password(password)
