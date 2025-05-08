@@ -11,7 +11,9 @@ class LoginSerializer(serializers.Serializer):
   password = serializers.CharField(write_only=True)
 
 
-class AdminCreateSerializer(serializers.ModelSerializer):
+
+class AdminUserSerializer(serializers.ModelSerializer):
+  
   username = serializers.CharField(required=True)
   name = serializers.CharField(required=True)
   surname = serializers.CharField(required=True)
@@ -91,6 +93,13 @@ class AdminUpdateSerializer(serializers.ModelSerializer):
   class Meta:
     model = AdminUser
     fields = ['email', 'username', 'name', 'surname']
+    password = validated_data.pop('password')
+    user = AdminUser(**validated_data)
+    user.set_password(password)
+    user.is_staff = True
+    user.save()
+    
+    return user
 
   def update(self, instance, validated_data):
     for attr, value in validated_data.items():
