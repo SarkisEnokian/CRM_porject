@@ -1,33 +1,42 @@
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError, APIException
 from super_admin.models import AdminUser
-from django.core.exceptions import ObjectDoesNotExist
-
 
 class AdminService:
 
     @staticmethod
-    def get_all_admins():
-        admins = AdminUser.objects.filter(is_staff=True).exclude(is_superuser=True)
+    def create_admin_user(validated_data):
+        if validated_data.get('password') != validated_data.pop('confirm_password', None):
+            raise ValidationError("Passwords do not match")
 
-        if not admins.exists():
-            raise NotFound(detail="Admins not found")
-        return admins
-
-    @staticmethod
-    def get_admin_info(user):
         try:
-            self_admin = AdminUser.objects.get(id=user.id)
-        except ObjectDoesNotExist:
-            raise NotFound(detail="Admin not found")
-        return self_admin
+            user = AdminUser.objects.create_user(**validated_data)
+        except Exception as e:
+            raise APIException(f"Error creating admin user: {str(e)}")
+
+        return user
 
     @staticmethod
-    def create_admin_user(data):
-        user = AdminUser.objects.create_user(
-            email=data['email'],
-            username=data['username'],
-            password=data['password'],
-            name=data.get('name', ''),
-            surname=data.get('surname', '')
-        )
+    def update_admin_user(user_id, validated_data):
+        try:
+            user = AdminUser.objects.get(id=user_id)
+        except AdminUser.DoesNotExist:
+            raise NotFound(f"Admin with id {user_id} not found")
+        except Exception as e:
+            raise APIException(f"Error updating admin user: {str(e)}")
+
+        for key, value in validated_data.items():
+            setattr(user, key, value)
+        user.save()
         return user
+
+    @staticmethod
+    def delete_admin_user(user_id):
+        try:
+            user = AdminUser.objects.get(id=user_id)
+        except AdminUser.DoesNotExist:
+            raise NotFound(f"Admin with id {user_id} not found")
+        except Exception as e:
+            raise APIException(f"Error deleting admin user: {str(e)}")
+
+        user.delete()
+        return True

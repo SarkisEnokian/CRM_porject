@@ -1,9 +1,9 @@
-from django.contrib.auth import authenticate
 from django.middleware.csrf import get_token
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework import status
+from rest_framework.exceptions import ValidationError, NotAuthenticated, APIException
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,8 +11,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from services.admin_service import AdminService
+from services.auth_service import AuthService
+from super_admin.serializers import AdminCreateSerializer
 from .permissions import IsSuperAdmin, IsAdminUser
-from .serializers import LoginSerializer, AdminUserSerializer
+from .serializers import AdminUpdateSerializer
+from .serializers import LoginSerializer
 
 
 class LoginView(APIView):
@@ -28,36 +32,21 @@ class LoginView(APIView):
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    email = serializer.validated_data['email']
-    password = serializer.validated_data['password']
-    user = authenticate(request, email=email, password=password)
+    try:
+      user = AuthService.login_user(
+        serializer.validated_data['email'],
+        serializer.validated_data['password']
+      )
+      tokens = AuthService.generate_tokens_for_user(user)
+      response = Response({'message': 'Login successful'})
+      return AuthService.set_tokens_in_cookies(response, tokens)
 
-    if not user:
-      return Response({'detail': 'Invalid credentials'}, status=401)
-
-    refresh = RefreshToken.for_user(user)
-    access = str(refresh.access_token)
-
-    response = Response({'message': 'Login successful'})
-    response.set_cookie(
-      key='access_token',
-      value=access,
-      httponly=True,
-      secure=True,
-      samesite='Lax'
-    )
-    response.set_cookie(
-      key='refresh_token',
-      value=str(refresh),
-      httponly=True,
-      secure=True,
-      samesite='Lax'
-    )
-    return response
+    except ValidationError as e:
+      return Response({'detail': str(e.detail)}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutView(APIView):
-  permission_classes = [IsAuthenticated]
+  permission_classes = [permissions.IsAuthenticated]
 
   @swagger_auto_schema(
     operation_summary="Logout",
@@ -65,45 +54,40 @@ class LogoutView(APIView):
     responses={205: "Logged out"}
   )
   def post(self, request):
-    refresh_token = request.COOKIES.get("refresh_token")
+    try:
+      return AuthService.logout_user(request)
+    except NotAuthenticated as e:
+      return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+      return Response({'detail': str(e.detail)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TokenRefreshView(APIView):
+  permission_classes = [permissions.AllowAny]
+
+  @swagger_auto_schema(operation_summary="Refresh Access Token")
+  def post(self, request):
+    refresh_token = request.COOKIES.get('refresh_token')
     if not refresh_token:
-      return Response({"detail": "Refresh token missing"}, status=400)
+      return Response({'detail': 'Refresh token missing'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-      token = RefreshToken(refresh_token)
-      token.blacklist()
-    except Exception:
-      return Response({"detail": "Invalid token"}, status=400)
+      refresh = RefreshToken(refresh_token)
+      refresh.set_jti()
+      new_access_token = str(refresh.access_token)
 
-    response = Response({"detail": "Logged out successfully"}, status=205)
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
-    return response
+      response = Response({'message': 'Access token refreshed'})
+      response.set_cookie(
+        key='access_token',
+        value=new_access_token,
+        httponly=True,
+        secure=True,
+        samesite='Lax'
+      )
+      return response
 
-  class TokenRefreshView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-      refresh_token = request.COOKIES.get('refresh_token')
-      if not refresh_token:
-        return Response({'detail': 'Refresh token missing'}, status=400)
-
-      try:
-        refresh = RefreshToken(refresh_token)
-        access_token = str(refresh.access_token)
-
-        response = Response({'message': 'Token refreshed'})
-        response.set_cookie(
-          key='access_token',
-          value=access_token,
-          httponly=True,
-          secure=True,
-          samesite='Lax'
-        )
-        return response
-
-      except TokenError:
-        return Response({'detail': 'Invalid refresh token'}, status=401)
+    except TokenError:
+      return Response({'detail': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class SuperAdminDashboardView(APIView):
@@ -146,20 +130,66 @@ class AdminDashboardView(APIView):
     return Response({'message': 'Welcome Admin'})
 
 
-class CreateAdminUserView(APIView):
-  permission_classes = [IsSuperAdmin]
+class CreateAdminView(APIView):
+  permission_classes = [IsAuthenticated & IsSuperAdmin]
 
   @swagger_auto_schema(
-    request_body=AdminUserSerializer,
+    request_body=AdminCreateSerializer,
     responses={201: "Admin user created successfully"},
     operation_summary="Create admin user",
     operation_description="Only SuperAdmin can create new admin users."
   )
   def post(self, request):
-    serializer = AdminUserSerializer(data=request.data)
+    serializer = AdminCreateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response({'message': 'Admin user created successfully'}, status=status.HTTP_201_CREATED)
+
+    try:
+      user = AdminService.create_admin_user(serializer.validated_data)
+    except APIException as e:
+      return Response({"detail": str(e.detail)}, status=e.status_code)
+
+    return Response({"detail": "Admin created successfully", "id": user.id}, status=status.HTTP_201_CREATED)
+
+
+class UpdateAdminView(APIView):
+  permission_classes = [IsSuperAdmin]
+
+  @swagger_auto_schema(
+    request_body=AdminUpdateSerializer,
+    responses={200: openapi.Response("Admin updated", AdminUpdateSerializer),
+               400: "Bad Request", 404: "Admin not found"},
+    operation_summary="Update admin user",
+    operation_description="Only SuperAdmin can update admin user details.",
+    tags=["Admin Management"]
+  )
+  def put(self, request, pk):
+    serializer = AdminUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+      updated_user = AdminService.update_admin_user(pk, serializer.validated_data)
+    except APIException as e:
+      return Response({"detail": str(e.detail)}, status=e.status_code)
+
+    return Response({"detail": "Admin updated", "id": updated_user.id}, status=status.HTTP_200_OK)
+
+
+class DeleteAdminView(APIView):
+  permission_classes = [IsSuperAdmin]
+
+  @swagger_auto_schema(
+    responses={204: "Admin deleted successfully", 404: "Admin not found"},
+    operation_summary="Delete admin user",
+    operation_description="Only SuperAdmin can delete admin users.",
+    tags=["Admin Management"]
+  )
+  def delete(self, request, pk):
+    try:
+      AdminService.delete_admin_user(pk)
+    except APIException as e:
+      return Response({"detail": str(e.detail)}, status=e.status_code)
+
+    return Response({"detail": "Admin deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class GetCSRFTokenView(APIView):
@@ -168,28 +198,3 @@ class GetCSRFTokenView(APIView):
   def get(self, request):
     csrf_token = get_token(request)
     return Response({'csrfToken': csrf_token})
-
-
-class TokenRefreshView(APIView):
-  permission_classes = [permissions.AllowAny]
-
-  def post(self, request):
-    refresh_token = request.COOKIES.get('refresh_token')
-    if not refresh_token:
-      return Response({'detail': 'No refresh token found'}, status=400)
-
-    try:
-      refresh = RefreshToken(refresh_token)
-      new_access_token = str(refresh.access_token)
-
-      response = Response({'message': 'Token refreshed'})
-      response.set_cookie(
-        key='access_token',
-        value=new_access_token,
-        httponly=True,
-        secure=True,
-        samesite='Lax'
-      )
-      return response
-    except TokenError:
-      return Response({'detail': 'Invalid refresh token'}, status=401)
