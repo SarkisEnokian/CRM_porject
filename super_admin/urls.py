@@ -60,9 +60,11 @@ from .views import (
   LogoutView,
   SuperAdminDashboardView,
   AdminDashboardView,
-  CreateAdminUserView,
+  CreateAdminView,
   GetCSRFTokenView,
-TokenRefreshView
+  TokenRefreshView,
+  UpdateAdminView,
+  DeleteAdminView
 )
 
 urlpatterns = [
@@ -70,7 +72,9 @@ urlpatterns = [
   path('logout/', LogoutView.as_view(), name='logout'),
   path('csrf/', GetCSRFTokenView.as_view(), name='csrf_token'),
   path('refresh/', TokenRefreshView.as_view(), name='refresh_token'),
-  path('create_admin/', CreateAdminUserView.as_view(), name='create_admin_user'),
+  path('create_admin/', CreateAdminView.as_view(), name='create_admin_user'),
+  path('admins/<int:pk>/update/', UpdateAdminView.as_view()),
+  path('admins/<int:pk>/delete/', DeleteAdminView.as_view()),
   path('dashboard/superadmin/', SuperAdminDashboardView.as_view(), name='superadmin_dashboard'),
   path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
 
