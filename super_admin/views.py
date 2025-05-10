@@ -3,7 +3,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework import status
-from rest_framework.exceptions import ValidationError, NotAuthenticated, APIException
+from rest_framework.exceptions import ValidationError, NotAuthenticated, APIException, NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,7 +13,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from services.admin_service import AdminService
 from services.auth_service import AuthService
-from super_admin.serializers import AdminCreateSerializer
+from services.dashboard_service import DashboardService
+from super_admin.serializers import AdminCreateSerializer, AdminResponseSerializer
 from .permissions import IsSuperAdmin, IsAdminUser
 from .serializers import AdminUpdateSerializer
 from .serializers import LoginSerializer
@@ -73,7 +74,6 @@ class TokenRefreshView(APIView):
 
     try:
       refresh = RefreshToken(refresh_token)
-      refresh.set_jti()
       new_access_token = str(refresh.access_token)
 
       response = Response({'message': 'Access token refreshed'})
@@ -90,8 +90,8 @@ class TokenRefreshView(APIView):
       return Response({'detail': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class SuperAdminDashboardView(APIView):
-  permission_classes = [IsSuperAdmin]
+class AdminListView(APIView):
+  permission_classes = [IsAuthenticated & IsSuperAdmin]
 
   @swagger_auto_schema(
     operation_summary="SuperAdmin dashboard",
@@ -107,7 +107,34 @@ class SuperAdminDashboardView(APIView):
     }
   )
   def get(self, request):
-    return Response({'message': 'Welcome SuperAdmin'})
+    try:
+      admins = DashboardService.get_admins()
+      serializer = AdminResponseSerializer(admins, many=True)
+      return Response(serializer.data, status=status.HTTP_200_OK)
+    except NotFound as e:
+      return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+      return Response({"detail": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# class SuperAdminDashboardView(APIView):
+#   permission_classes = [IsSuperAdmin]
+#
+#   @swagger_auto_schema(
+#     operation_summary="SuperAdmin dashboard",
+#     operation_description="Accessible only by superadmin users.",
+#     responses={
+#       200: openapi.Response(
+#         description="Successful request",
+#         examples={
+#           "application/json": {"message": "Welcome SuperAdmin"}
+#         }
+#       ),
+#       403: "Forbidden. You are not a superadmin."
+#     }
+#   )
+#   def get(self, request):
+#     return Response({'message': 'Welcome SuperAdmin'})
 
 
 class AdminDashboardView(APIView):
@@ -141,18 +168,21 @@ class CreateAdminView(APIView):
   )
   def post(self, request):
     serializer = AdminCreateSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+
+    if not serializer.is_valid():
+      return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     try:
       user = AdminService.create_admin_user(serializer.validated_data)
     except APIException as e:
-      return Response({"detail": str(e.detail)}, status=e.status_code)
+      return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response({"detail": "Admin created successfully", "id": user.id}, status=status.HTTP_201_CREATED)
+    return Response({"detail": "Admin created successfully", "id": user.id, "name": user.name},
+                    status=status.HTTP_201_CREATED)
 
 
 class UpdateAdminView(APIView):
-  permission_classes = [IsSuperAdmin]
+  permission_classes = [IsAuthenticated & IsSuperAdmin]
 
   @swagger_auto_schema(
     request_body=AdminUpdateSerializer,
@@ -164,18 +194,29 @@ class UpdateAdminView(APIView):
   )
   def put(self, request, pk):
     serializer = AdminUpdateSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+
+    if not serializer.is_valid():
+      return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     try:
       updated_user = AdminService.update_admin_user(pk, serializer.validated_data)
+    except NotFound as e:
+      return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
     except APIException as e:
-      return Response({"detail": str(e.detail)}, status=e.status_code)
+      return Response({"detail": str(e)}, status=e.status_code)
+    except Exception as e:
+      return Response({"detail": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response({"detail": "Admin updated", "id": updated_user.id}, status=status.HTTP_200_OK)
+    updated_serializer = AdminResponseSerializer(updated_user)
+
+    return Response({
+      "detail": "Admin updated",
+      "updated_data": updated_serializer.data
+    }, status=status.HTTP_200_OK)
 
 
 class DeleteAdminView(APIView):
-  permission_classes = [IsSuperAdmin]
+  permission_classes = [IsAuthenticated & IsSuperAdmin]
 
   @swagger_auto_schema(
     responses={204: "Admin deleted successfully", 404: "Admin not found"},
@@ -186,10 +227,12 @@ class DeleteAdminView(APIView):
   def delete(self, request, pk):
     try:
       AdminService.delete_admin_user(pk)
-    except APIException as e:
-      return Response({"detail": str(e.detail)}, status=e.status_code)
+    except NotFound as e:
+      return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+    except Exception:
+      return Response({"detail": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response({"detail": "Admin deleted"}, status=status.HTTP_204_NO_CONTENT)
+    return Response({"detail": "Admin deleted successfully."}, status=status.HTTP_200_OK)
 
 
 class GetCSRFTokenView(APIView):
