@@ -64,7 +64,8 @@ from .views import (
   GetCSRFTokenView,
   TokenRefreshView,
   UpdateAdminView,
-  DeleteAdminView
+  DeleteAdminView,
+  UpdateRolesView
 )
 
 urlpatterns = [
@@ -77,5 +78,7 @@ urlpatterns = [
   path('admins/delete/<int:pk>/', DeleteAdminView.as_view()),
   path('dashboard/superadmin/', AdminListView.as_view(), name='superadmin_dashboard'),
   path('dashboard/admin/', AdminDashboardView.as_view(), name='admin_dashboard'),
+  
+  path('admins/role_update/<int:pk>/', UpdateRolesView.as_view(), name='role_update_data'),
 
 ]
