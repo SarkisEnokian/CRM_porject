@@ -38,7 +38,7 @@ class AdminService:
     user.is_active = False
     user.save()
     return True
-  
+
   @staticmethod
   def role_update_admin_user(user_id, validated_data):
     user = AdminUser.objects.filter(id=user_id).first()

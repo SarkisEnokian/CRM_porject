@@ -10,15 +10,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from services.admin_service import AdminService
 from services.auth_service import AuthService
 from services.dashboard_service import DashboardService
 from super_admin.serializers import AdminCreateSerializer, AdminResponseSerializer
-from .permissions import IsSuperAdmin, IsAdminUser
-from .serializers import LoginSerializer, AdminRoleUpdateSerializer, AdminUpdateSerializer
-
-
-
+from utils.permissions import IsSuperAdmin, IsAdminUser
+from super_admin.serializers import LoginSerializer, AdminRoleUpdateSerializer, AdminUpdateSerializer
 
 
 class LoginView(APIView):
@@ -47,8 +45,6 @@ class LoginView(APIView):
       return response
 
 
-
-
 class LogoutView(APIView):
   permission_classes = [permissions.IsAuthenticated]
 
@@ -64,7 +60,6 @@ class LogoutView(APIView):
       return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except ValidationError as e:
       return Response({'detail': str(e.detail)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class TokenRefreshView(APIView):
@@ -254,16 +249,16 @@ class GetCSRFTokenView(APIView):
 
 
 class UpdateRolesView(APIView):
-    def patch(self, request, pk):
-        role_serializer = AdminRoleUpdateSerializer(data=request.data, partial=True)
+  def patch(self, request, pk):
+    role_serializer = AdminRoleUpdateSerializer(data=request.data, partial=True)
 
-        if not role_serializer.is_valid():
-            return Response(role_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    if not role_serializer.is_valid():
+      return Response(role_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        updated_user = AdminService.role_update_admin_user(pk, role_serializer.validated_data)
-        updated_serializer = AdminResponseSerializer(updated_user)
+    updated_user = AdminService.role_update_admin_user(pk, role_serializer.validated_data)
+    updated_serializer = AdminResponseSerializer(updated_user)
 
-        return Response({
-            "detail": "Admin updated",
-            "updated_data": updated_serializer.data
-        }, status=status.HTTP_200_OK)
+    return Response({
+      "detail": "Admin updated",
+      "updated_data": updated_serializer.data
+    }, status=status.HTTP_200_OK)
