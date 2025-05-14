@@ -38,3 +38,15 @@ class AdminService:
     user.is_active = False
     user.save()
     return True
+  
+  @staticmethod
+  def role_update_admin_user(user_id, validated_data):
+    user = AdminUser.objects.filter(id=user_id).first()
+    if not user:
+      raise NotFound(f"Admin with id {user_id} not found")
+
+    for key, value in validated_data.items():
+      setattr(user, key, value)
+
+    user.save()
+    return user

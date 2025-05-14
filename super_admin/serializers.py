@@ -11,19 +11,25 @@ class LoginSerializer(serializers.Serializer):
   password = serializers.CharField(write_only=True)
 
 
-
-class AdminUserSerializer(serializers.ModelSerializer):
-  
+class AdminCreateSerializer(serializers.ModelSerializer):
   username = serializers.CharField(required=True)
   name = serializers.CharField(required=True)
   surname = serializers.CharField(required=True)
   email = serializers.EmailField(required=True)
   password = serializers.CharField(write_only=True, required=True)
   confirm_password = serializers.CharField(write_only=True, required=True)
+  lead_management = serializers.BooleanField(default=False)
+  sales_management = serializers.BooleanField(default=False)
+  marketing_department = serializers.BooleanField(default=False)
+  finance_department = serializers.BooleanField(default=False)
+  technical_support_CSM = serializers.BooleanField(default=False)
+  backup_security = serializers.BooleanField(default=False)
+  bug_tracking  = serializers.BooleanField(default=False)
+
 
   class Meta:
     model = AdminUser
-    fields = ['email', 'username', 'name', 'surname', 'password', 'confirm_password']
+    fields = ['email', 'username', 'name', 'surname', 'password', 'confirm_password', 'lead_management','sales_management','marketing_department','finance_department','technical_support_CSM','backup_security','bug_tracking']
 
   def validate_username(self, value):
     value = value.strip()
@@ -76,6 +82,13 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
   def create(self, validated_data):
     validated_data.pop('confirm_password')
+    validated_data.pop('lead_management')
+    validated_data.pop('sales_management')
+    validated_data.pop('marketing_department')
+    validated_data.pop('finance_department')
+    validated_data.pop('technical_support_CSM')
+    validated_data.pop('backup_security')
+    validated_data.pop('bug_tracking')
     create_admin = AdminUser.objects.create_user(**validated_data)
     return create_admin
 
@@ -84,17 +97,10 @@ class AdminUpdateSerializer(serializers.ModelSerializer):
   class Meta:
     model = AdminUser
     fields = ['email', 'username', 'name', 'surname']
-    password = validated_data.pop('password')
-    user = AdminUser(**validated_data)
-    user.set_password(password)
-    user.is_staff = True
-    user.save()
-    
-    return user
 
   def update(self, instance, validated_data):
     for attr, value in validated_data.items():
-      setattr(instance, attr, value)
+        setattr(instance, attr, value)
     instance.save()
     return instance
 
@@ -107,3 +113,14 @@ class AdminResponseSerializer(serializers.ModelSerializer):
   def to_representation(self, instance):
     rep = super().to_representation(instance)
     return rep
+
+
+class AdminRoleUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminUser
+        fields = ['lead_management','sales_management','marketing_department','finance_department','technical_support_CSM','backup_security','bug_tracking']
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance

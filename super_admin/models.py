@@ -27,6 +27,15 @@ class AdminManager(BaseUserManager):
       extra_fields.setdefault('is_superuser', True)
 
     extra_fields.setdefault('is_staff', True)
+    extra_fields.update({
+      'lead_management': True,
+      'sales_management': True,
+      'marketing_department': True,
+      'finance_department': True,
+      'technical_support_CSM': True,
+      'backup_security': True,
+      'bug_tracking': True,
+    })
     return self.create_user(email, username, name, surname, password, **extra_fields)
 
 
@@ -37,6 +46,13 @@ class AdminUser(AbstractBaseUser, PermissionsMixin):
   surname = models.CharField(max_length=255, blank=True)
   is_active = models.BooleanField(default=True)
   is_staff = models.BooleanField(default=False)
+  lead_management = models.BooleanField(default=False)
+  sales_management = models.BooleanField(default=False)
+  marketing_department = models.BooleanField(default=False)
+  finance_department = models.BooleanField(default=False)
+  technical_support_CSM = models.BooleanField(default=False)
+  backup_security = models.BooleanField(default=False)
+  bug_tracking = models.BooleanField(default=False)
 
   objects = AdminManager()
 

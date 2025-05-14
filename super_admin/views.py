@@ -10,160 +10,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from services.admin_service import AdminService
 from services.auth_service import AuthService
 from services.dashboard_service import DashboardService
 from super_admin.serializers import AdminCreateSerializer, AdminResponseSerializer
 from .permissions import IsSuperAdmin, IsAdminUser
-from .serializers import AdminUpdateSerializer
-from .serializers import LoginSerializer
+from .serializers import LoginSerializer, AdminRoleUpdateSerializer, AdminUpdateSerializer
 
 
-# class LoginView(APIView):
-#   permission_classes = [permissions.AllowAny]
-#
-#   @swagger_auto_schema(
-#     request_body=LoginSerializer,
-#     responses={200: "Tokens set in cookies"},
-#     operation_summary="Login",
-#     operation_description="Authenticates user and sets JWT tokens in HttpOnly cookies."
-#   )
-#   def post(self, request):
-#     serializer = LoginSerializer(data=request.data)
-#     serializer.is_valid(raise_exception=True)
-#
-#     try:
-#       user = AuthService.login_user(
-#         serializer.validated_data['email'],
-#         serializer.validated_data['password']
-#       )
-#       tokens = AuthService.generate_tokens_for_user(user)
-#       response = Response({'message': 'Login successful'})
-#       return AuthService.set_tokens_in_cookies(response, tokens)
-#
-#     except ValidationError as e:
-#       return Response({'detail': str(e.detail)}, status=status.HTTP_401_UNAUTHORIZED)
-#
-#
-# class LogoutView(APIView):
-#   permission_classes = [permissions.IsAuthenticated]
-#
-#   @swagger_auto_schema(
-#     operation_summary="Logout",
-#     request_body=None,
-#     responses={205: "Logged out"}
-#   )
-#   def post(self, request):
-#     try:
-#       return AuthService.logout_user(request)
-#     except NotAuthenticated as e:
-#       return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#     except ValidationError as e:
-#       return Response({'detail': str(e.detail)}, status=status.HTTP_400_BAD_REQUEST)
-#
-#
-# class TokenRefreshView(APIView):
-#   permission_classes = [permissions.AllowAny]
-#
-#   @swagger_auto_schema(operation_summary="Refresh Access Token")
-#   def post(self, request):
-#     refresh_token = request.COOKIES.get('refresh_token')
-#     if not refresh_token:
-#       return Response({'detail': 'Refresh token missing'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#     try:
-#       refresh = RefreshToken(refresh_token)
-#       new_access_token = str(refresh.access_token)
-#
-#       response = Response({'message': 'Access token refreshed'})
-#       response.set_cookie(
-#         key='access_token',
-#         value=new_access_token,
-#         httponly=True,
-#         secure=True,
-#         samesite='Lax'
-#       )
-#       return response
-#
-#     except TokenError:
-#       return Response({'detail': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
 
-
-# class LoginView(APIView):
-#   permission_classes = [permissions.AllowAny]
-#
-#   @swagger_auto_schema(
-#     request_body=LoginSerializer,
-#     responses={200: "Tokens set in cookies"},
-#   )
-#   def post(self, request):
-#     serializer = LoginSerializer(data=request.data)
-#     serializer.is_valid(raise_exception=True)
-#     response = Response()
-#
-#     try:
-#         user = AuthService.login_user(serializer.validated_data['email'], ...)
-#         tokens = AuthService.generate_tokens_for_user(user)
-#         return AuthService.set_tokens_in_cookies(response, tokens)
-#     except ValidationError as e:
-#         response.delete_cookie('access_token')
-#         response.delete_cookie('refresh_token')
-#         return Response({'detail': str(e.detail)}, status=401)
-#
-#
-# class LogoutView(APIView):
-#   permission_classes = [permissions.IsAuthenticated]
-#
-#   @swagger_auto_schema(
-#     operation_summary="Logout",
-#     request_body=None,
-#     responses={205: "Դուրս գալ"}
-#   )
-#   def post(self, request):
-#     try:
-#       return AuthService.logout_user(request)
-#     except ValidationError as e:
-#       # Սխալ refresh token-ի դեպքում
-#       return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#     except Exception as e:
-#       # Համաշխարհային սխալների դեպքում
-#       return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#
-#
-# class TokenRefreshView(APIView):
-#   permission_classes = [permissions.AllowAny]
-#
-#   def post(self, request):
-#     refresh_token = request.COOKIES.get('refresh_token')
-#     if not refresh_token:
-#       return Response(
-#         {'detail': 'Refresh token չկա'},
-#         status=status.HTTP_400_BAD_REQUEST
-#       )
-#
-#     try:
-#       refresh = RefreshToken(refresh_token)
-#       new_access_token = str(refresh.access_token)
-#       response = Response({'message': 'Access token-ը թարմացվեց'})
-#       response.set_cookie(
-#         key='access_token',
-#         value=new_access_token,
-#         httponly=True,
-#         secure=True,
-#         samesite='Lax'
-#       )
-#       return response
-#
-#     except TokenError:
-#       # Եթե refresh_token-ն անվավեր է՝ մաքրել cookies-ը
-#       response = Response(
-#         {'detail': 'Ինվալիդ refresh token'},
-#         status=status.HTTP_401_UNAUTHORIZED
-#       )
-#       response.delete_cookie('access_token')
-#       response.delete_cookie('refresh_token')
-#       return response
 
 
 class LoginView(APIView):
@@ -209,13 +64,6 @@ class LogoutView(APIView):
       return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except ValidationError as e:
       return Response({'detail': str(e.detail)}, status=status.HTTP_400_BAD_REQUEST)
-
-# class LogoutView(APIView):
-#   permission_classes = [permissions.IsAuthenticated]
-#
-#   def post(self, request):
-#     return AuthService.logout_user(request)
-
 
 
 
@@ -403,3 +251,19 @@ class GetCSRFTokenView(APIView):
   def get(self, request):
     csrf_token = get_token(request)
     return Response({'csrfToken': csrf_token})
+
+
+class UpdateRolesView(APIView):
+    def patch(self, request, pk):
+        role_serializer = AdminRoleUpdateSerializer(data=request.data, partial=True)
+
+        if not role_serializer.is_valid():
+            return Response(role_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_user = AdminService.role_update_admin_user(pk, role_serializer.validated_data)
+        updated_serializer = AdminResponseSerializer(updated_user)
+
+        return Response({
+            "detail": "Admin updated",
+            "updated_data": updated_serializer.data
+        }, status=status.HTTP_200_OK)
