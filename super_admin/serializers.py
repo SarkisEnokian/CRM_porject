@@ -80,7 +80,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
     return create_admin
 
 
-
 class AdminUpdateSerializer(serializers.ModelSerializer):
   class Meta:
     model = AdminUser
@@ -108,4 +107,3 @@ class AdminResponseSerializer(serializers.ModelSerializer):
   def to_representation(self, instance):
     rep = super().to_representation(instance)
     return rep
-

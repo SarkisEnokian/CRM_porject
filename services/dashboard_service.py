@@ -6,7 +6,7 @@ from super_admin.models import AdminUser
 class DashboardService:
   @staticmethod
   def get_admins():
-    admins = AdminUser.objects.filter(is_staff=True).exclude(is_superuser=True)
+    admins = AdminUser.objects.filter(is_staff=True, is_active=True).exclude(is_superuser=True)
     if not admins.exists():
       raise NotFound("No admin users found.")
     return admins
