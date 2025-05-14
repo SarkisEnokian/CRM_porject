@@ -35,5 +35,6 @@ class AdminService:
     if not user:
       raise NotFound(f"Admin with id {user_id} not found")
 
-    user.delete()
+    user.is_active = False
+    user.save()
     return True

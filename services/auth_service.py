@@ -1,13 +1,14 @@
+from tokenize import TokenError
+
 from django.contrib.auth import get_user_model
-from rest_framework.exceptions import ValidationError, NotAuthenticated
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
 
 class AuthService:
-
   @staticmethod
   def login_user(email: str, password: str):
     user = User.objects.filter(email=email).first()
@@ -30,14 +31,14 @@ class AuthService:
       value=tokens['access'],
       httponly=True,
       secure=True,
-      samesite='Lax'
+      samesite='Lax',
     )
     response.set_cookie(
       key='refresh_token',
       value=tokens['refresh'],
       httponly=True,
       secure=True,
-      samesite='Lax'
+      samesite='Lax',
     )
     return response
 
@@ -49,15 +50,11 @@ class AuthService:
     except TokenError:
       raise ValidationError("Invalid refresh token")
 
-
   @staticmethod
   def logout_user(request):
     refresh_token = request.COOKIES.get("refresh_token")
-    if not refresh_token:
-      raise ValidationError({"detail": "Refresh token missing"})
-
-    AuthService.blacklist_refresh_token(
-      refresh_token)
+    if refresh_token:
+      AuthService.blacklist_refresh_token(refresh_token)
 
     response = Response({"detail": "Logged out successfully"}, status=205)
     response.delete_cookie("access_token")
