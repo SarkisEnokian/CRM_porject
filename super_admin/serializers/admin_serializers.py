@@ -3,12 +3,7 @@ import re
 from rest_framework import serializers
 
 from messages.error_messages import ERROR_MESSAGES
-from .models import AdminUser
-
-
-class LoginSerializer(serializers.Serializer):
-  email = serializers.EmailField()
-  password = serializers.CharField(write_only=True)
+from super_admin.models import AdminUser
 
 
 class AdminCreateSerializer(serializers.ModelSerializer):
@@ -18,19 +13,10 @@ class AdminCreateSerializer(serializers.ModelSerializer):
   email = serializers.EmailField(required=True)
   password = serializers.CharField(write_only=True, required=True)
   confirm_password = serializers.CharField(write_only=True, required=True)
-  lead_management = serializers.BooleanField(default=False)
-  sales_management = serializers.BooleanField(default=False)
-  marketing_department = serializers.BooleanField(default=False)
-  finance_department = serializers.BooleanField(default=False)
-  technical_support_CSM = serializers.BooleanField(default=False)
-  backup_security = serializers.BooleanField(default=False)
-  bug_tracking = serializers.BooleanField(default=False)
 
   class Meta:
     model = AdminUser
-    fields = ['email', 'username', 'name', 'surname', 'password', 'confirm_password', 'lead_management',
-              'sales_management', 'marketing_department', 'finance_department', 'technical_support_CSM',
-              'backup_security', 'bug_tracking']
+    fields = ['email', 'username', 'name', 'surname', 'password', 'confirm_password']
 
   def validate_username(self, value):
     value = value.strip()
