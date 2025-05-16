@@ -134,6 +134,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'super_admin.AdminUser'
+MARKETING_DEPARTMENT = 'super_admin.MarketingDepartment'
+
 
 REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (

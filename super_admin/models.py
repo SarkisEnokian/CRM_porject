@@ -28,13 +28,13 @@ class AdminManager(BaseUserManager):
 
     extra_fields.setdefault('is_staff', True)
     extra_fields.update({
-      'lead_management': True,
-      'sales_management': True,
-      'marketing_department': True,
-      'finance_department': True,
-      'technical_support_CSM': True,
-      'backup_security': True,
-      'bug_tracking': True,
+      'lead_management_role': True,
+      'sales_management_role': True,
+      'marketing_department_role': True,
+      'finance_department_role': True,
+      'technical_support_CSM_role': True,
+      'backup_security_role': True,
+      'bug_tracking_role': True,
     })
     return self.create_user(email, username, name, surname, password, **extra_fields)
 
@@ -46,13 +46,13 @@ class AdminUser(AbstractBaseUser, PermissionsMixin):
   surname = models.CharField(max_length=255, blank=True)
   is_active = models.BooleanField(default=True)
   is_staff = models.BooleanField(default=False)
-  lead_management = models.BooleanField(default=False)
-  sales_management = models.BooleanField(default=False)
-  marketing_department = models.BooleanField(default=False)
-  finance_department = models.BooleanField(default=False)
-  technical_support_CSM = models.BooleanField(default=False)
-  backup_security = models.BooleanField(default=False)
-  bug_tracking = models.BooleanField(default=False)
+  lead_management_role = models.BooleanField(default=False)
+  sales_management_role = models.BooleanField(default=False)
+  marketing_department_role = models.BooleanField(default=False)
+  finance_department_role = models.BooleanField(default=False)
+  technical_support_CSM_role = models.BooleanField(default=False)
+  backup_security_role = models.BooleanField(default=False)
+  bug_tracking_role = models.BooleanField(default=False)
 
   objects = AdminManager()
 
@@ -61,3 +61,21 @@ class AdminUser(AbstractBaseUser, PermissionsMixin):
 
   def __str__(self):
     return self.email
+
+
+
+class MarketingDepartment(models.Model):
+    day = models.CharField(max_length=255, blank=True)
+    mood = models.CharField(max_length=255, blank=True)
+    
+    connect = models.ForeignKey(
+        'AdminUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'marketing_department_role': True},
+        # related_name='MD'
+    )
+    
+    def __str__(self):
+        return self.day + ' ' + self.mood
