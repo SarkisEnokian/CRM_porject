@@ -109,8 +109,8 @@ class AdminResponseSerializer(serializers.ModelSerializer):
 class AdminRoleUpdateSerializer(serializers.ModelSerializer):
   class Meta:
     model = AdminUser
-    fields = ['lead_management', 'sales_management', 'marketing_department', 'finance_department',
-              'technical_support_CSM', 'backup_security', 'bug_tracking']
+    fields = ['lead_management_role', 'sales_management_role', 'marketing_department_role', 'finance_department_role',
+              'technical_support_CSM_role', 'backup_security_role', 'bug_tracking_role']
 
   def update(self, instance, validated_data):
     for attr, value in validated_data.items():
